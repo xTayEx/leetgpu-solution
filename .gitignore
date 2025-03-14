@@ -1,0 +1,53 @@
+# Build artifacts
+*.o
+*.so
+*.a
+*.exe
+
+# CUDA specific
+*.cubin
+*.fatbin
+*.ptx
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependency directories
+deps/
+build/
+bin/
+obj/
+third_party/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+
+# Data files
+*.bin
+*.data
+
+# Logs and outputs
+*.log
+*.out
+
+# Local settings
+.env
+*.user
+
+# Package managers
+conanbuildinfo.txt
+conaninfo.txt
+
+# Python
+__pycache__/
+venv/
+
+build/
+.cache
+compile_commands.json
