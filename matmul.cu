@@ -1,20 +1,25 @@
 #include "helper.cuh"
 #include <cstdio>
-#include <cuda_runtime.h>
 #include <cublas.h>
+#include <cuda_runtime.h>
 
-#define TILE_SIZE 16
+constexpr int TILE_SIZE = 16;
+constexpr int TM = 8;
+constexpr int TN = 8;
 
 __global__ void matrix_multiplication_kernel(const float *A, const float *B,
                                              float *C, int M, int N, int K) {
   __shared__ float As[TILE_SIZE][TILE_SIZE];
   __shared__ float Bs[TILE_SIZE][TILE_SIZE];
 
+  float r_C[TM][TN] = {0.0f};
+
   size_t row = blockIdx.y * TILE_SIZE;
   size_t col = blockIdx.x * TILE_SIZE;
 
   size_t ty = threadIdx.y;
   size_t tx = threadIdx.x;
+  const size_t tid = threadIdx.y * blockDim.x + threadIdx.x;
 
   int m = row + ty;
   int k = col + tx;
@@ -61,7 +66,6 @@ void solve(const float *A, const float *B, float *C, int M, int N, int K) {
                                                                    N, K);
   cudaDeviceSynchronize();
 }
-
 
 int main() {
   // test the solve function
