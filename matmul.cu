@@ -10,6 +10,7 @@ __global__ void matrix_multiplication_kernel(const float *A, const float *B,
 
   for (int m = row_idx; m < M; m += blockDim.y * gridDim.y) {
     for (int k = col_idx; k < K; k += blockDim.x * gridDim.x) {
+      #pragma unroll
       for (int n = 0; n < N; ++n) {
         C[m * K + k] += A[m * N + n] * B[n * K + k];
       }
