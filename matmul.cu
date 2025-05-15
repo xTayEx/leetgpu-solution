@@ -3,65 +3,29 @@
 #include <cuda_runtime.h>
 #include <cublas.h>
 
-#define TILE_SIZE 16
-
 __global__ void matrix_multiplication_kernel(const float *A, const float *B,
                                              float *C, int M, int N, int K) {
-  __shared__ float As[TILE_SIZE][TILE_SIZE];
-  __shared__ float Bs[TILE_SIZE][TILE_SIZE];
+  size_t row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+  size_t col_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-  size_t row = blockIdx.y * TILE_SIZE;
-  size_t col = blockIdx.x * TILE_SIZE;
-
-  size_t ty = threadIdx.y;
-  size_t tx = threadIdx.x;
-
-  int m = row + ty;
-  int k = col + tx;
-
-  float sum = 0.0f;
-
-  for (int n_start = 0; n_start < N; n_start += TILE_SIZE) {
-    int a_col = n_start + tx;
-    if (m < M && a_col < N) {
-      As[ty][tx] = A[m * N + a_col];
-    } else {
-      As[ty][tx] = 0.0f;
+  for (int m = row_idx; m < M; m += blockDim.y * gridDim.y) {
+    for (int k = col_idx; k < K; k += blockDim.x * gridDim.x) {
+      for (int n = 0; n < N; ++n) {
+        C[m * K + k] += A[m * N + n] * B[n * K + k];
+      }
     }
-
-    int b_row = n_start + ty;
-    if (k < K && b_row < N) {
-      Bs[ty][tx] = B[b_row * K + k];
-    } else {
-      Bs[ty][tx] = 0.0f;
-    }
-
-    __syncthreads();
-
-    for (int i = 0; i < TILE_SIZE; ++i) {
-      sum += As[ty][i] * Bs[i][tx];
-    }
-
-    __syncthreads();
-  }
-
-  if (m < M && k < K) {
-    C[m * K + k] = sum;
   }
 }
 
 // A, B, C are device pointers (i.e. pointers to memory on the GPU)
-void solve(const float *A, const float *B, float *C, int M, int N, int K) {
-  dim3 threadsPerBlock(16, 16);
-  dim3 blocksPerGrid((K + TILE_SIZE - 1) / TILE_SIZE,
-                     (M + TILE_SIZE - 1) / TILE_SIZE);
-
-  cudaMemset(C, 0, sizeof(float) * M * K);
-  matrix_multiplication_kernel<<<blocksPerGrid, threadsPerBlock>>>(A, B, C, M,
-                                                                   N, K);
-  cudaDeviceSynchronize();
+void solve(const float* A, const float* B, float* C, int M, int N, int K) {
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((K + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (M + threadsPerBlock.y - 1) / threadsPerBlock.y);
+    
+    matrix_multiplication_kernel<<<blocksPerGrid, threadsPerBlock>>>(A, B, C, M, N, K);
+    cudaDeviceSynchronize();
 }
-
 
 int main() {
   // test the solve function
