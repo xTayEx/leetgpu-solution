@@ -13,8 +13,8 @@ namespace po = boost::program_options;
 template <int TILE_SIZE = 64, int EXPAND_FACTOR = 4>
 __global__ void matrix_multiplication_kernel(const float *A, const float *B,
                                              float *C, int M, int N, int K) {
-  __shared__ float As[TILE_SIZE][TILE_SIZE / EXPAND_FACTOR]; // (16, 4)
-  __shared__ float Bs[TILE_SIZE / EXPAND_FACTOR][TILE_SIZE]; // (4, 16)
+  __shared__ float As[2][TILE_SIZE][TILE_SIZE / EXPAND_FACTOR]; // (16, 4)
+  __shared__ float Bs[2][TILE_SIZE / EXPAND_FACTOR][TILE_SIZE]; // (4, 16)
 
   size_t block_row = blockIdx.y * TILE_SIZE;
   size_t block_col = blockIdx.x * TILE_SIZE;
